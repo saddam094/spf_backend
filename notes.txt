@@ -1,0 +1,45 @@
+Auth
+
+POST /auth/register → Register vendor/customer ---> Done
+
+POST /auth/login → Login (JWT token) ---> Done
+
+Vendor Panel
+
+POST /products → Add product ---> Done
+
+GET /products/vendor/:id → Vendor’s products
+
+PUT /products/:id → Update product
+
+DELETE /products/:id → Delete product
+
+Admin Panel
+
+GET /users/vendors → List all vendors
+
+GET /users/customers → List all customers
+
+DELETE /users/:id → Remove vendor/customer
+
+GET /orders → All orders
+
+Customer Panel (Shop)
+
+GET /products → All products
+
+GET /products/:id → Single product details
+
+POST /orders → Place order
+
+GET /orders/:customerId → Customer orders
+
+Analytics Dashboard
+
+GET /analytics/sales → Total sales, per vendor
+
+GET /analytics/revenue → Revenue over time
+
+GET /analytics/stock → Low-stock products
+
+GET /analytics/customers → Active customers
