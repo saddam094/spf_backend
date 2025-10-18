@@ -1,4 +1,5 @@
-const Product = require('../models/Product');
+import cloudinary from './config/cloudinary.js';
+import Product from '../models/Product.js';
 
 
 /// Add Product
@@ -74,4 +75,46 @@ const fetchParticularPRoduct = async (req, res) => {
     }
 };
 
-module.exports = { addProduct, fetchParticularPRoduct };
+const getProductPresignedUrl = async (req, res) => {
+  try {
+    const { fileName, folder = "products" } = req.body;
+    if (!fileName) {
+      return res.status(400).json({ statusCode: 400, message: "fileName is required" });
+    }
+    // Clean file name
+    const cleanFileName = fileName.trim().replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
+    // Create unique key / public_id
+    const timestamp = Math.floor(Date.now() / 1000);
+    const key = `${folder}/${cleanFileName}_${timestamp}`;
+    // Params to sign
+    const paramsToSign = {
+      timestamp,
+      public_id: key,
+      folder
+    };
+    // Generate signature
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
+    // Signed URL for direct upload (Cloudinary expects POST with multipart/form-data)
+    const signedUrl = `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/auto/upload?timestamp=${timestamp}&public_id=${encodeURIComponent(key)}&folder=${folder}&signature=${signature}&api_key=${process.env.CLOUDINARY_API_KEY}`;
+    const uploadDetails = [
+      {
+        fileName,
+        signedUrl,
+        contentType: "image/jpeg"
+      }
+    ];
+    res.status(200).json({
+      statusCode: 200,
+      body: { uploadDetails }
+    });
+  } catch (err) {
+    console.error("Error generating Cloudinary presigned URL:", err);
+    res.status(500).json({
+      statusCode: 500,
+      message: "Internal Server Error",
+      error: err.message
+    });
+  }
+};
+
+export { addProduct, fetchParticularPRoduct, getProductPresignedUrl };
