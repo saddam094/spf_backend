@@ -14,7 +14,7 @@ const register = async (req, res) => {
         // Check if user exists
         const existingUser = await User.findOne({ email });
         if (existingUser)
-            return res.status(400).json({ message: 'User already exists' });
+            return res.status(400).json({ statusCode: 400, message: 'User already exists' });
 
         // Hash password
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -42,9 +42,9 @@ const register = async (req, res) => {
         });
 
         await newUser.save();
-        res.status(200).json({ message: 'User registered successfully', user: newUser });
+        res.status(200).json({ statusCode: 200, message: 'User registered successfully', user: newUser });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ statusCode: 500, message: err.message });
     }
 };
 
