@@ -54,10 +54,10 @@ const login = async (req, res) => {
     const { email, password } = req.body;
     try {
         const user = await User.findOne({ email });
-        if (!user) return res.status(400).json({ message: 'Invalid email' });
+        if (!user) return res.status(400).json({ statusCode: 400, message: 'Invalid email' });
 
         const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) return res.status(400).json({ message: 'Invalid password' });
+        if (!isMatch) return res.status(400).json({ statusCode: 400, message: 'Invalid password' });
 
         // Generate JWT token
         const token = jwt.sign(
@@ -66,7 +66,8 @@ const login = async (req, res) => {
             { expiresIn: '7d' }
         );
 
-        res.json({ 
+        res.status(200).json({ 
+            statusCode: 200,
             token, 
             user: { 
                 id: user._id, 
@@ -78,7 +79,7 @@ const login = async (req, res) => {
             } 
         });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+        res.status(500).json({ statusCode: 500, message: err.message });
     }
 };
 
