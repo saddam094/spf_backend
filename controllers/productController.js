@@ -43,6 +43,57 @@ const addProduct = async (req, res) => {
     }
 };
 
+/// Delete Product
+const deleteProduct = async (req, res) => {
+  const { productId } = req.body;
+
+  try {
+    // 1️⃣ Check if product exists
+    const product = await Product.findOne({ "_id": productId });
+    if (!product) {
+      return res.status(404).json({
+        statusCode: 404,
+        body: { message: "Product does not exist" },
+      });
+    }
+
+    // 2️⃣ Delete all Cloudinary images
+    // assuming product.images = ["https://res.cloudinary.com/.../abc123.jpg", "https://res.cloudinary.com/.../xyz456.png"]
+    if (product.images && product.images.length > 0) {
+      for (const imageUrl of product.images) {
+        try {
+          // Extract public_id from Cloudinary URL
+          const parts = imageUrl.split("/");
+          const filename = parts.pop(); // e.g. "abc123.jpg"
+          const folder = parts.slice(parts.indexOf("upload") + 1).join("/");
+          const publicId = folder.replace(/v\d+\//, "") + "/" + filename.split(".")[0];
+
+          await cloudinary.uploader.destroy(publicId);
+        } catch (error) {
+          console.error("Error deleting image from Cloudinary:", error.message);
+        }
+      }
+    }
+
+    // 3️⃣ Delete product from MongoDB
+    await Product.deleteOne({ "_id": productId });
+
+    // 4️⃣ Send success response
+    res.status(200).json({
+      statusCode: 200,
+      body: {
+        message: "Product and all images deleted successfully",
+        deletedProduct: product,
+      },
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      statusCode: 500,
+      message: err.message,
+    });
+  }
+};
 
 /// Fetch Particular Product
 const fetchParticularPRoduct = async (req, res) => {
@@ -117,4 +168,4 @@ const getProductPresignedUrl = async (req, res) => {
   }
 };
 
-export { addProduct, fetchParticularPRoduct, getProductPresignedUrl };
+export { addProduct, deleteProduct, fetchParticularPRoduct, getProductPresignedUrl };

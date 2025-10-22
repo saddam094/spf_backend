@@ -12,9 +12,10 @@ const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
-  role: { type: String, enum: ['admin', 'vendor', 'user'], default: 'user' },
-  phone: { type: String },
+  role: { type: String, enum: ['admin', 'vendor', 'seller'], default: 'user' },
+  phone: { type: String , required: true},
   address: { type: addressSchema },
-}, { timestamps: true }); // automatically adds createdAt and updatedAt
+  image: { type: String, required: true }
+}, { timestamps: true });
 
 module.exports = mongoose.model('User', userSchema);

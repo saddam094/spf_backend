@@ -1,10 +1,14 @@
-const User = require('../models/User');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
+import cloudinary from './config/cloudinary.js';
+import User from '../models/User.js';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+
+// const bcrypt = require('bcrypt');
+// const jwt = require('jsonwebtoken');
 
 // Register user
 const register = async (req, res) => {
-    const { name, email, password, role, phone, address } = req.body;
+    const { name, email, password, role, phone, address, profileImage } = req.body;
 
     try {
         // Check if user exists
@@ -33,7 +37,8 @@ const register = async (req, res) => {
             password: hashedPassword,
             role,
             phone,
-            address
+            address,
+            image: profileImage
         });
 
         await newUser.save();
@@ -77,4 +82,47 @@ const login = async (req, res) => {
     }
 };
 
-module.exports = { register, login };
+/// Get Profile Presigned URL
+const getProfilePresignedUrl = async (req, res) => {
+  try {
+    const { fileName, folder = "profile" } = req.body;
+    if (!fileName) {
+      return res.status(400).json({ statusCode: 400, message: "fileName is required" });
+    }
+    // Clean file name
+    const cleanFileName = fileName.trim().replace(/\s+/g, "_").replace(/[^\w\-]/g, "");
+    // Create unique key / public_id
+    const timestamp = Math.floor(Date.now() / 1000);
+    const key = `${folder}/${cleanFileName}_${timestamp}`;
+    // Params to sign
+    const paramsToSign = {
+      timestamp,
+      public_id: key,
+      folder
+    };
+    // Generate signature
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET);
+    // Signed URL for direct upload (Cloudinary expects POST with multipart/form-data)
+    const signedUrl = `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_CLOUD_NAME}/auto/upload?timestamp=${timestamp}&public_id=${encodeURIComponent(key)}&folder=${folder}&signature=${signature}&api_key=${process.env.CLOUDINARY_API_KEY}`;
+    const uploadDetails = [
+      {
+        fileName,
+        signedUrl,
+        contentType: "image/jpeg"
+      }
+    ];
+    res.status(200).json({
+      statusCode: 200,
+      body: { uploadDetails }
+    });
+  } catch (err) {
+    console.error("Error generating Cloudinary presigned URL:", err);
+    res.status(500).json({
+      statusCode: 500,
+      message: "Internal Server Error",
+      error: err.message
+    });
+  }
+};
+
+export { register, login, getProfilePresignedUrl };
